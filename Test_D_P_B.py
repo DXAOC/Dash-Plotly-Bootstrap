@@ -55,7 +55,30 @@ app.layout = dbc.Container([
         xs=12, sm=12, md=12, lg=6, xl=6
         ),
 
-    ])
+    ]),
+
+    dbc.Row([
+
+        dbc.Col([
+            dcc.Graph(id='mutlti_fitlter', figure={}),
+            dcc.Checklist(
+                id='checklist_year',
+                options=[{'label': x, 'value': x} for x in sorted(df['year'].unique())],
+                value=[dff.year.min(), dff.year.min()+1],
+            ),
+            dcc.Checklist(
+                id='checklist_area',
+                options=[{'label': x, 'value': x} for x in sorted(df['area'].unique())],
+                value=['barking and dagenham', 'barnet']
+            ),
+        ],
+        xs=12, sm=12, md=12, lg=12, xl=12
+        ),
+    ]),
+
+
+
+
 ])
 
 # Callback section: connecting the components
@@ -76,10 +99,20 @@ def update_fig_line(area_selector):
     Input('range_slider_year', 'value')
 )
 def update_fig_bar(date_selector):
-    #dff = df.groupby(by=['year', 'area']).mean().reset_index()
     dff_date = dff[(dff.year >= date_selector[0]) & (dff.year <= date_selector[1])]
-    fig_bar = px.bar(dff_date, x='area', y='no_of_crimes')
+    dff_date['year'] = dff_date['year'].apply(lambda x: str(x))
+    fig_bar = px.bar(dff_date, x='area', y='no_of_crimes', color='year')
     return fig_bar
+
+@app.callback(
+    Output('mutlti_fitlter', 'figure'),
+    [Input('checklist_year', 'value'),
+    Input('checklist_area', 'value')]
+)
+def update_mutlti_fitlter(year, area):
+    dff_year_area = dff[(df['area'].isin(area)) & (df['year'].isin(year))]
+    fig_year_area = px.bar(dff_year_area, x ='year', y='average_price', color='average_price')
+    return fig_year_area
 
 
 if __name__=='__main__':
